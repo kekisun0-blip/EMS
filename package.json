@@ -1,0 +1,12 @@
+{
+  "name": "ems-sandbox-demo",
+  "private": true,
+  "description": "EMS 仿真沙盘静态站点，可部署到 Vercel / Netlify / Cloudflare Pages",
+  "scripts": {
+    "preview": "npx --yes serve . -l 5175",
+    "deploy:vercel": "npx --yes vercel --prod",
+    "antd:dev": "npm run dev --prefix antd-console",
+    "antd:build": "npm run build --prefix antd-console",
+    "antd:islands": "npm run build:islands --prefix antd-console"
+  }
+}

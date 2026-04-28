@@ -1,0 +1,4 @@
+# 将本目录作为纯静态站点发布（拖拽部署或 Git 连接均可）
+[build]
+  publish = "."
+  command = "echo 'static'"

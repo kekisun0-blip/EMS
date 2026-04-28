@@ -1,0 +1,421 @@
+/**
+ * 展陈向 · 数字孪生 HUD（青蓝全息 / 玻璃拟态）
+ * html.exhibit-hud — 逻辑层不变，仅视觉覆盖
+ */
+html.exhibit-hud{
+  --hud-void:#00050a;
+  --hud-deep:#001018;
+  --hud-panel:rgba(0,24,48,0.42);
+  --hud-line:rgba(0,242,255,0.22);
+  --hud-line-dim:rgba(0,242,255,0.08);
+  --hud-cyan:#00e8ff;
+  --hud-cyan-dim:rgba(0,232,255,0.12);
+  --hud-text:#e8fbff;
+  --hud-muted:rgba(180,230,255,0.45);
+  --hud-glow:0 0 24px rgba(0,232,255,0.15);
+  --xiaowei-violet:#5ec8ff;
+  --xiaowei-cyan:var(--hud-cyan);
+  --xiaowei-ring:rgba(0,232,255,0.4);
+}
+
+html.exhibit-hud body{
+  font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  background:var(--hud-void);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(0,80,120,0.35), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 100%, rgba(0,40,80,0.25), transparent 50%);
+  color:var(--hud-text);
+}
+
+/* 四角 HUD 括号 */
+html.exhibit-hud .hud-screen-frame{
+  position:fixed;
+  inset:0;
+  z-index:99;
+  pointer-events:none;
+}
+html.exhibit-hud .hud-cr{
+  position:absolute;
+  width:min(64px,10vw);
+  height:min(64px,10vw);
+  border-color:var(--hud-line);
+  border-style:solid;
+  border-width:0;
+  box-shadow:0 0 20px rgba(0,232,255,0.08);
+}
+html.exhibit-hud .hud-cr-tl{ top:14px; left:14px; border-top-width:2px; border-left-width:2px; border-top-left-radius:2px; }
+html.exhibit-hud .hud-cr-tr{ top:14px; right:14px; border-top-width:2px; border-right-width:2px; border-top-right-radius:2px; }
+html.exhibit-hud .hud-cr-bl{ bottom:14px; left:14px; border-bottom-width:2px; border-left-width:2px; border-bottom-left-radius:2px; }
+html.exhibit-hud .hud-cr-br{ bottom:14px; right:14px; border-bottom-width:2px; border-right-width:2px; border-bottom-right-radius:2px; }
+
+html.exhibit-hud #header{
+  background:linear-gradient(180deg,rgba(0,12,24,0.92),rgba(0,8,16,0.75));
+  border-bottom:1px solid var(--hud-line-dim);
+  box-shadow:0 4px 32px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(0,232,255,0.06);
+  backdrop-filter:blur(20px) saturate(1.2);
+  padding:8px 20px;
+}
+html.exhibit-hud #header h1{
+  font-family:'Exo 2','IBM Plex Sans',sans-serif;
+  font-weight:600;
+  font-size:0.95rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--hud-text);
+  text-shadow:0 0 20px rgba(0,232,255,0.25);
+}
+html.exhibit-hud #header .subtitle{
+  font-size:8px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--hud-muted);
+  margin-top:2px;
+}
+html.exhibit-hud .header-ip-line{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:6px;
+  letter-spacing:0.18em;
+  color:var(--hud-cyan);
+  opacity:0.85;
+}
+html.exhibit-hud .header-mascot-wrap{
+  border-color:var(--hud-line);
+  background:linear-gradient(145deg,rgba(0,40,60,0.5),rgba(0,15,30,0.85));
+  box-shadow:var(--hud-glow), inset 0 0 20px rgba(0,232,255,0.06);
+}
+html.exhibit-hud .header-mascot-img{
+  filter:saturate(1.05) brightness(1.05) drop-shadow(0 0 8px rgba(0,232,255,0.35));
+}
+
+html.exhibit-hud #marathon-bar-wrap{
+  background:rgba(0,20,40,0.6);
+  border:1px solid var(--hud-line-dim);
+}
+html.exhibit-hud #marathon-bar-fill{
+  background:linear-gradient(90deg,rgba(0,120,180,0.9),var(--hud-cyan),rgba(180,255,255,0.85));
+  box-shadow:0 0 16px rgba(0,232,255,0.35);
+}
+html.exhibit-hud #marathon-label{ color:var(--hud-muted); font-family:'Exo 2',sans-serif; font-size:8px; letter-spacing:0.06em; }
+
+html.exhibit-hud #btn-lang-toggle,
+html.exhibit-hud #btn-session-refresh,
+html.exhibit-hud #btn-pause-sim,
+html.exhibit-hud .speed-chip-group button{
+  border-radius:2px;
+  border:1px solid var(--hud-line-dim);
+  background:rgba(0,16,32,0.65);
+  color:var(--hud-text);
+  font-family:'Exo 2','IBM Plex Sans',sans-serif;
+  font-size:9px;
+  letter-spacing:0.04em;
+}
+html.exhibit-hud .speed-chip-group button.on{
+  border-color:var(--hud-cyan);
+  background:var(--hud-cyan-dim);
+  color:var(--hud-cyan);
+  box-shadow:0 0 12px rgba(0,232,255,0.2);
+}
+html.exhibit-hud #btn-session-refresh{
+  border-color:var(--hud-line);
+  color:var(--hud-cyan);
+}
+
+html.exhibit-hud #app{
+  padding-top:54px;
+}
+
+html.exhibit-hud #left-panel,
+html.exhibit-hud #right-panel{
+  background:var(--hud-panel);
+  border-color:var(--hud-line-dim);
+  border-width:0 1px 0 0;
+  backdrop-filter:blur(24px) saturate(1.15);
+  box-shadow:inset 0 0 60px rgba(0,40,80,0.08);
+}
+html.exhibit-hud #right-panel{
+  border-left:1px solid var(--hud-line-dim);
+  border-right:none;
+}
+html.exhibit-hud .section-title{
+  font-family:'Exo 2',sans-serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--hud-cyan);
+  border-bottom:1px solid var(--hud-line-dim);
+  padding-bottom:8px;
+  opacity:0.95;
+}
+
+html.exhibit-hud .preset-chip,
+html.exhibit-hud .touch-chip{
+  border-radius:2px;
+  border:1px solid var(--hud-line-dim);
+  background:rgba(0,12,28,0.55);
+  color:var(--hud-text);
+}
+html.exhibit-hud .preset-chip.on,
+html.exhibit-hud .touch-chip.on{
+  border-color:var(--hud-cyan);
+  background:var(--hud-cyan-dim);
+  color:var(--hud-cyan);
+}
+
+html.exhibit-hud #center{
+  background:transparent;
+}
+html.exhibit-hud #kpi-strip{
+  background:linear-gradient(180deg,rgba(0,30,55,0.55),transparent);
+  border-bottom:1px solid var(--hud-line-dim);
+  backdrop-filter:blur(12px);
+}
+html.exhibit-hud .kpi-ai-profit{
+  font-family:'Exo 2',sans-serif;
+  font-weight:600;
+  font-size:26px;
+  color:var(--hud-cyan);
+  -webkit-text-fill-color:var(--hud-cyan);
+  background:none;
+  text-shadow:0 0 28px rgba(0,232,255,0.35);
+}
+html.exhibit-hud .kpi-ai-label{
+  color:var(--hud-muted);
+  letter-spacing:0.25em;
+  font-size:8px;
+}
+html.exhibit-hud #hud-clock{ color:var(--hud-cyan); font-family:'Exo 2',monospace; }
+html.exhibit-hud .kpi-cell{
+  background:rgba(0,16,36,0.45);
+  border:1px solid var(--hud-line-dim);
+  border-radius:2px;
+}
+html.exhibit-hud .kpi-cell .kl{ color:var(--hud-muted); font-size:7px; letter-spacing:0.06em; }
+html.exhibit-hud .kpi-cell .kv{ color:var(--hud-text); }
+
+html.exhibit-hud #viz-area{
+  background:radial-gradient(ellipse at 50% 35%, rgba(0,60,90,0.15), transparent 55%);
+  box-shadow:inset 0 0 100px rgba(0,0,0,0.5);
+}
+html.exhibit-hud #viz-area::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:2;
+  background:radial-gradient(ellipse 90% 75% at 50% 42%, transparent 35%, rgba(0,5,15,0.55) 100%);
+}
+
+html.exhibit-hud #ai-next-panel{
+  background:rgba(0,12,28,0.82);
+  border:1px solid var(--hud-line);
+  border-radius:2px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.5), 0 0 1px rgba(0,232,255,0.2) inset;
+}
+html.exhibit-hud #ai-next-panel .an-label{
+  color:var(--hud-cyan);
+  letter-spacing:0.18em;
+}
+
+html.exhibit-hud #run-btn{
+  background:transparent;
+  color:var(--hud-cyan);
+  border:1px solid var(--hud-cyan);
+  border-radius:2px;
+  font-family:'Exo 2',sans-serif;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  font-size:10px;
+  box-shadow:0 0 20px rgba(0,232,255,0.12);
+}
+html.exhibit-hud #run-btn:hover{
+  background:var(--hud-cyan-dim);
+  box-shadow:0 0 28px rgba(0,232,255,0.25);
+}
+
+html.exhibit-hud .xiaowei-invite{
+  background:rgba(0,40,70,0.25);
+  border:1px solid var(--hud-line-dim);
+  border-radius:2px;
+}
+html.exhibit-hud .xiaowei-invite-img{
+  filter:drop-shadow(0 0 10px rgba(0,232,255,0.35));
+}
+html.exhibit-hud #btn-ai-analysis{
+  border-radius:2px;
+  border:1px solid var(--hud-cyan);
+  background:rgba(0,232,255,0.08);
+  color:var(--hud-cyan);
+  font-family:'Exo 2',sans-serif;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  font-size:9px;
+}
+
+html.exhibit-hud .ai-box{
+  background:rgba(0,14,32,0.65);
+  border:1px solid var(--hud-line-dim);
+  border-radius:2px;
+  backdrop-filter:blur(8px);
+}
+
+html.exhibit-hud .md-card{
+  background:rgba(0,16,36,0.55);
+  border:1px solid var(--hud-line-dim);
+  border-radius:2px;
+}
+html.exhibit-hud .md-card-day{ color:var(--hud-cyan); }
+html.exhibit-hud .md-card-profit{ color:var(--hud-text); text-shadow:0 0 12px rgba(0,232,255,0.2); }
+
+html.exhibit-hud #post-sim-box,
+html.exhibit-hud #recap-box,
+html.exhibit-hud #history-box,
+html.exhibit-hud #day-report-box{
+  background:rgba(0,10,22,0.94);
+  border:1px solid var(--hud-line);
+  box-shadow:0 24px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,232,255,0.06) inset;
+  backdrop-filter:blur(20px);
+}
+
+html.exhibit-hud .viz-mascot-watermark{
+  opacity:0.1;
+  filter:drop-shadow(0 0 16px rgba(0,232,255,0.4));
+}
+
+/* 外设角标 */
+html.exhibit-hud #museum-bridge-pill{
+  border-color:var(--hud-line-dim);
+  background:rgba(0,12,24,0.88);
+  color:var(--hud-muted);
+  font-family:'Exo 2','IBM Plex Sans',sans-serif;
+  letter-spacing:0.14em;
+}
+html.exhibit-hud #museum-bridge-pill.live{
+  border-color:var(--hud-cyan);
+  color:var(--hud-cyan);
+  box-shadow:0 0 16px rgba(0,232,255,0.2);
+}
+
+/* 图表面板 */
+html.exhibit-hud #bottom-bar{
+  background:rgba(0,8,20,0.88);
+  border-top:1px solid var(--hud-line-dim);
+  backdrop-filter:blur(12px);
+}
+
+html.exhibit-hud .param-label{
+  color:var(--hud-muted);
+  font-size:8px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+html.exhibit-hud .chart-tabs button.active{
+  border-color:var(--hud-cyan);
+  color:var(--hud-cyan);
+  background:rgba(0,232,255,0.08);
+}
+
+/* 参考硬件图：slate 蓝 + 斜纹区 + 状态灯 */
+html.exhibit-hud{
+  --hw-slate:rgba(90,115,145,0.35);
+  --hw-slate-line:rgba(120,145,175,0.2);
+}
+html.exhibit-hud .exhibit-hardware-panel{
+  margin-top:12px;
+  padding:10px 10px 12px;
+  border-radius:4px;
+  border:1px solid var(--hud-line-dim);
+  background:
+    linear-gradient(135deg, var(--hw-slate-line) 0%, var(--hw-slate-line) 6%, transparent 6%, transparent 12%),
+    linear-gradient(135deg, transparent 50%, rgba(0,24,48,0.5) 50%),
+    var(--hud-panel);
+  background-size:8px 8px, 100% 100%, auto;
+  backdrop-filter:blur(16px) saturate(1.1);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.25), 0 0 24px rgba(0,40,80,0.2);
+}
+html.exhibit-hud .exhibit-hardware-head{
+  margin-bottom:8px;
+}
+html.exhibit-hud .exhibit-hardware-hero{
+  border-radius:3px;
+  overflow:hidden;
+  border:1px solid var(--hud-line-dim);
+  margin-bottom:8px;
+  background:rgba(0,0,0,0.35);
+  box-shadow:0 0 20px rgba(0,232,255,0.06);
+}
+html.exhibit-hud .exhibit-hardware-hero-img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:min(140px,28vh);
+  object-fit:cover;
+  object-position:center 42%;
+  filter:saturate(0.92) contrast(1.05) drop-shadow(0 0 12px rgba(0,232,255,0.12));
+}
+html.exhibit-hud .exhibit-hardware-strip{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  gap:6px;
+  align-items:stretch;
+}
+@media (max-width:1180px){
+  html.exhibit-hud .exhibit-hardware-strip{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+  }
+}
+html.exhibit-hud .exhibit-hw-card{
+  margin:0;
+  padding:6px 4px;
+  border-radius:3px;
+  border:1px solid var(--hud-line-dim);
+  background:linear-gradient(160deg, rgba(70,95,125,0.25), rgba(0,12,24,0.65));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:52px;
+  position:relative;
+}
+html.exhibit-hud .exhibit-hw-card::after{
+  content:'';
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  width:0;
+  height:0;
+  border-left:10px solid transparent;
+  border-bottom:6px solid rgba(0,0,0,0.55);
+  opacity:0.85;
+  pointer-events:none;
+}
+html.exhibit-hud .exhibit-hw-card img{
+  max-width:100%;
+  max-height:48px;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  filter:drop-shadow(0 0 6px rgba(0,232,255,0.15));
+}
+
+/* Ant Design 岛屿：与 HUD 融合 */
+html.exhibit-hud .ems-react-mount{
+  margin-top:8px;
+  min-height:8px;
+}
+html.exhibit-hud .ems-react-mount .ant-card{
+  background:rgba(0,20,40,0.45)!important;
+  border-color:rgba(0,232,255,0.14)!important;
+}
+html.exhibit-hud .ems-react-mount .ant-card-head-title,
+html.exhibit-hud .ems-react-mount .ant-statistic-title{
+  color:rgba(180,230,255,0.72)!important;
+}
+html.exhibit-hud .ems-react-mount .ant-typography{
+  color:inherit;
+}
+html.exhibit-hud .ems-react-mount .ant-progress-text{
+  color:var(--hud-cyan)!important;
+}
