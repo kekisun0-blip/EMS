@@ -1,0 +1,235 @@
+/**
+ * 博物馆展陈向视觉：暖黑底、香槟金细线、衬线标题 + 无渐变霓虹的克制界面
+ * 依赖 html.museum-exhibit
+ */
+html.museum-exhibit{
+  --mus-bg:#080706;
+  --mus-bg-elev:#100e0c;
+  --mus-panel:#0e0c0a;
+  --mus-line:rgba(212,175,55,0.22);
+  --mus-line-faint:rgba(255,245,230,0.06);
+  --mus-text:#ebe7df;
+  --mus-muted:#7a7268;
+  --mus-gold:#c6a24a;
+  --mus-gold-soft:rgba(198,162,74,0.14);
+  --mus-ink:#1a1816;
+  --xiaowei-violet:#9a8b6e;
+  --xiaowei-cyan:#8a7a5c;
+  --xiaowei-ring:rgba(198,162,74,0.35);
+}
+
+html.museum-exhibit body{
+  font-family:'Source Sans 3',system-ui,sans-serif;
+  background:var(--mus-bg);
+  color:var(--mus-text);
+  letter-spacing:0.01em;
+}
+
+html.museum-exhibit #header{
+  background:rgba(8,7,6,0.94);
+  border-bottom:1px solid var(--mus-line-faint);
+  backdrop-filter:blur(16px);
+  padding:10px 18px;
+}
+html.museum-exhibit #header h1{
+  font-family:'Cormorant Garamond','Times New Roman',serif;
+  font-weight:500;
+  font-size:1.35rem;
+  letter-spacing:0.04em;
+  color:var(--mus-text);
+}
+html.museum-exhibit #header .subtitle{
+  color:var(--mus-muted);
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+}
+html.museum-exhibit .header-ip-line{
+  color:var(--mus-gold);
+  font-family:'Source Sans 3',sans-serif;
+  font-weight:500;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  font-size:7px;
+}
+html.museum-exhibit .header-mascot-wrap{
+  border-color:var(--mus-line);
+  background:linear-gradient(145deg,rgba(30,26,20,0.9),rgba(18,16,14,0.95));
+  box-shadow:0 0 0 1px rgba(255,248,237,0.04) inset;
+}
+
+html.museum-exhibit #marathon-bar-wrap{
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--mus-line-faint);
+}
+html.museum-exhibit #marathon-bar-fill{
+  background:linear-gradient(90deg,rgba(198,162,74,0.85),rgba(230,210,160,0.55));
+  box-shadow:0 0 12px rgba(198,162,74,0.15);
+}
+html.museum-exhibit #marathon-label{color:var(--mus-muted);}
+
+html.museum-exhibit #btn-lang-toggle,
+html.museum-exhibit #btn-session-refresh,
+html.museum-exhibit #btn-pause-sim,
+html.museum-exhibit .speed-chip-group button{
+  border-radius:2px;
+  border:1px solid var(--mus-line-faint);
+  background:var(--mus-bg-elev);
+  color:var(--mus-text);
+  font-weight:500;
+}
+html.museum-exhibit .speed-chip-group button.on{
+  border-color:var(--mus-gold);
+  background:var(--mus-gold-soft);
+  color:var(--mus-gold);
+}
+html.museum-exhibit #btn-session-refresh{
+  border-color:var(--mus-line);
+  color:var(--mus-gold);
+  background:transparent;
+}
+
+html.museum-exhibit #left-panel,
+html.museum-exhibit #right-panel{
+  background:var(--mus-panel);
+  border-color:var(--mus-line-faint);
+}
+html.museum-exhibit .section-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.08em;
+  color:var(--mus-text);
+  border-bottom:1px solid var(--mus-line-faint);
+  padding-bottom:6px;
+}
+
+html.museum-exhibit .preset-chip,
+html.museum-exhibit .touch-chip{
+  border-radius:2px;
+  border:1px solid var(--mus-line-faint);
+  background:var(--mus-bg-elev);
+  color:var(--mus-text);
+}
+html.museum-exhibit .preset-chip.on,
+html.museum-exhibit .touch-chip.on{
+  border-color:var(--mus-gold);
+  background:var(--mus-gold-soft);
+  color:var(--mus-gold);
+}
+
+html.museum-exhibit #center{background:var(--mus-bg);}
+html.museum-exhibit #kpi-strip{
+  background:linear-gradient(180deg,rgba(198,162,74,0.06),transparent);
+  border-bottom:1px solid var(--mus-line-faint);
+}
+html.museum-exhibit .kpi-ai-profit{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:600;
+  font-size:28px;
+  color:var(--mus-gold);
+  -webkit-text-fill-color:var(--mus-gold);
+  background:none;
+  letter-spacing:0.02em;
+}
+html.museum-exhibit .kpi-ai-label{
+  color:var(--mus-muted);
+  letter-spacing:0.2em;
+}
+html.museum-exhibit #hud-clock{color:var(--mus-gold);}
+html.museum-exhibit #hud-speed{color:var(--mus-muted);}
+
+html.museum-exhibit #viz-area{
+  box-shadow:inset 0 0 120px rgba(0,0,0,0.45);
+  outline:1px solid var(--mus-line-faint);
+  outline-offset:-1px;
+}
+
+html.museum-exhibit #ai-next-panel{
+  background:rgba(8,7,6,0.92);
+  border:1px solid var(--mus-line);
+  border-radius:2px;
+  backdrop-filter:blur(12px);
+}
+html.museum-exhibit #ai-next-panel .an-label{color:var(--mus-gold);letter-spacing:0.15em;}
+
+html.museum-exhibit #run-btn{
+  background:var(--mus-ink);
+  color:var(--mus-gold);
+  border:1px solid var(--mus-gold);
+  border-radius:2px;
+  font-weight:600;
+  letter-spacing:0.06em;
+}
+html.museum-exhibit #run-btn:hover{filter:brightness(1.08);}
+
+html.museum-exhibit .ai-box{
+  background:rgba(14,12,10,0.85);
+  border:1px solid var(--mus-line-faint);
+  border-radius:2px;
+}
+html.museum-exhibit .xiaowei-invite{
+  background:rgba(198,162,74,0.06);
+  border:1px solid var(--mus-line-faint);
+  border-radius:2px;
+}
+html.museum-exhibit #btn-ai-analysis{
+  border-radius:2px;
+  border:1px solid var(--mus-gold);
+  background:transparent;
+  color:var(--mus-gold);
+  font-weight:600;
+  letter-spacing:0.04em;
+}
+
+html.museum-exhibit #post-sim-box,
+html.museum-exhibit #recap-box,
+html.museum-exhibit #history-box{
+  border:1px solid var(--mus-line);
+  background:var(--mus-panel);
+  border-radius:4px;
+}
+html.museum-exhibit .post-sim-tab.on{
+  border-color:var(--mus-gold);
+  color:var(--mus-gold);
+}
+
+html.museum-exhibit #bottom-bar{
+  background:var(--mus-panel);
+  border-top:1px solid var(--mus-line-faint);
+}
+
+/* 展陈角标：极淡，避免抢 3D 画面 */
+html.museum-exhibit .viz-mascot-watermark{
+  opacity:0.06;
+}
+
+html.museum-exhibit .md-card{border-color:var(--mus-line-faint);}
+html.museum-exhibit .md-card-day{color:var(--mus-gold);}
+html.museum-exhibit .md-card-profit{color:var(--mus-text);}
+html.museum-exhibit .md-card-wx{border-top-color:var(--mus-line-faint);}
+html.museum-exhibit .md-card-kpi-v{color:var(--mus-text);}
+
+/* 连接状态角标（由 museum-bridge.js 写入） */
+#museum-bridge-pill{
+  position:fixed;
+  bottom:12px;
+  right:12px;
+  z-index:120;
+  font-size:9px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  padding:6px 10px;
+  border-radius:2px;
+  border:1px solid var(--mus-line-faint, rgba(255,255,255,0.08));
+  background:rgba(8,7,6,0.85);
+  color:var(--mus-muted, #64748b);
+  pointer-events:none;
+  font-family:'Source Sans 3',system-ui,sans-serif;
+}
+html.museum-exhibit #museum-bridge-pill{border-color:var(--mus-line-faint);color:var(--mus-muted);}
+#museum-bridge-pill.live{
+  border-color:rgba(198,162,74,0.45);
+  color:var(--mus-gold, #c6a24a);
+}

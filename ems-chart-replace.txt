@@ -1,0 +1,434 @@
+function formatStepLabel(i){
+  const h = Math.floor(i / 4), m = (i % 4) * 15;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+function emsChartXCategories(){
+  const a = [];
+  for(let i = 0; i < STEPS; i++){
+    a.push(i % 4 === 0 ? formatAxisHour(Math.floor(i / 4)) : '');
+  }
+  return a;
+}
+function emsChartBaseTheme(){
+  return {
+    backgroundColor: 'transparent',
+    textStyle: { color: '#94a3b8', fontFamily: 'Inter,IBM Plex Sans,system-ui,sans-serif' },
+    animationDurationUpdate: 380,
+    animationEasingUpdate: 'cubicOut'
+  };
+}
+function disposeEmsMainChart(){
+  if(emsEchartsMain){
+    try{ emsEchartsMain.dispose(); }catch(e){}
+    emsEchartsMain = null;
+  }
+  emsChartDrawStamp = { reveal: -1, tab: '', h: 0, sim: null };
+}
+function buildMainEchartsOption(){
+  const tab = (chartTab === 'predsoc' || chartTab === 'actsoc') ? 'soc' : chartTab;
+  const n = STEPS;
+  const maxH = getChartRevealSteps();
+  const sliceArr = function(arr){
+    if(!arr || !arr.length) return [];
+    return arr.slice(0, Math.min(maxH, n));
+  };
+  const xCat = emsChartXCategories();
+  const base = emsChartBaseTheme();
+  const axisLine = { lineStyle: { color: 'rgba(148,163,184,0.22)' } };
+  const splitLine = { lineStyle: { color: 'rgba(255,255,255,0.06)' } };
+  const tooltipAxis = {
+    trigger: 'axis',
+    appendToBody: true,
+    backgroundColor: 'rgba(8,12,20,0.94)',
+    borderColor: 'rgba(56,189,248,0.35)',
+    borderWidth: 1,
+    padding: [10, 12],
+    textStyle: { color: '#e2e8f0', fontSize: 11 },
+    axisPointer: {
+      type: 'cross',
+      crossStyle: { color: 'rgba(148,163,184,0.45)' },
+      label: { backgroundColor: 'rgba(15,23,42,0.92)', color: '#cbd5e1' }
+    },
+    formatter: function(params){
+      if(!params || !params.length) return '';
+      const i = params[0].dataIndex;
+      let html = '<div style="font-weight:700;color:#22d3ee;margin-bottom:6px;">' + formatStepLabel(i) + '</div>';
+      params.forEach(function(p){
+        const v = p.value;
+        let vs = '—';
+        if(v != null && v !== '' && isFinite(v)) vs = (Math.abs(v) >= 100 ? Number(v).toFixed(1) : Number(v).toFixed(2));
+        html += '<div style="display:flex;justify-content:space-between;gap:14px;margin:3px 0;min-width:160px;"><span style="color:#94a3b8;">' + p.marker + p.seriesName + '</span><b style="color:#f8fafc;">' + vs + '</b></div>';
+      });
+      return html;
+    }
+  };
+  const dataZoomPair = [
+    { type: 'inside', xAxisIndex: 0, filterMode: 'none' },
+    {
+      type: 'slider',
+      xAxisIndex: 0,
+      height: 16,
+      bottom: 6,
+      borderColor: 'rgba(56,189,248,0.18)',
+      backgroundColor: 'rgba(15,23,42,0.6)',
+      fillerColor: 'rgba(56,189,248,0.2)',
+      handleStyle: { color: '#38bdf8', borderColor: '#67e8f9' },
+      moveHandleStyle: { color: '#22d3ee' },
+      textStyle: { color: '#64748b', fontSize: 9 }
+    }
+  ];
+
+  if(tab === 'ems'){
+    const pow = simResult.power;
+    if(!pow || !sliceArr(pow.pvAc).length){
+      const plant = (simResult && simResult.__real && simResult.__real.plantId) ? ('real · ' + simResult.__real.plantId) : '';
+      return {
+        ...base,
+        title: { text: emsT('功率曲线缺失', 'Power series missing') + (plant ? (' (' + plant + ')') : ''), left: 'center', top: 'center', textStyle: { color: '#64748b', fontSize: 12 } }
+      };
+    }
+    const defs = [
+      { k: 'pvDc', name: 'PV(DC)', color: '#a8b4c4', dash: true, w: 1.35 },
+      { k: 'gridSup', name: '电网取电', color: '#f472b6', w: 1.65 },
+      { k: 'pvAc', name: 'PV(AC)', color: '#3b82f6', w: 1.55 },
+      { k: 'acFeed', name: 'AC馈出', color: '#34d399', w: 1.45 },
+      { k: 'gridFeed', name: '馈网', color: '#22d3ee', w: 1.45 },
+      { k: 'cons', name: '用电', color: '#f1f5f9', w: 2.2 },
+      { k: 'battCh', name: '电池充电', color: '#7dd3fc', w: 1.45 },
+      { k: 'selfUse', name: '自消费', color: '#a5b4fc', w: 1.45 },
+      { k: 'battDis', name: '电池放电', color: '#60a5fa', w: 1.45 }
+    ];
+    let peak = 0.01;
+    defs.forEach(function(d){
+      const a = pow[d.k];
+      if(!a) return;
+      a.forEach(function(v){ peak = Math.max(peak, Math.abs(v) || 0); });
+    });
+    const kwMax = peak <= 10 ? 10 : Math.ceil(peak / 2) * 2;
+    const wv = simResult.weather96;
+    const wxLine = wv && wv.length
+      ? Array.from({ length: 24 }, function(_, h){
+          return weatherEmoji(wv[Math.min(h * 4, wv.length - 1)]);
+        }).join(' ')
+      : '';
+    const series = [];
+    defs.forEach(function(d){
+      const data = sliceArr(pow[d.k]);
+      if(!data.length) return;
+      series.push({
+        name: d.name,
+        type: 'line',
+        smooth: 0.12,
+        symbol: 'circle',
+        symbolSize: 3,
+        showSymbol: false,
+        lineStyle: { width: d.w, type: d.dash ? [6, 4] : 'solid', color: d.color },
+        itemStyle: { color: d.color },
+        yAxisIndex: 0,
+        data: data,
+        emphasis: { focus: 'series', lineStyle: { width: d.w + 0.8 } }
+      });
+    });
+    series.push({
+      name: 'SOC',
+      type: 'line',
+      smooth: 0.2,
+      symbol: 'circle',
+      symbolSize: 4,
+      showSymbol: false,
+      lineStyle: { width: 2.8, color: '#fb923c' },
+      itemStyle: { color: '#fb923c' },
+      yAxisIndex: 1,
+      data: sliceArr(simResult.actSoc),
+      emphasis: { focus: 'series', lineStyle: { width: 3.2 } }
+    });
+    return {
+      ...base,
+      title: [
+        { text: 'Power · kW / SOC', left: 12, top: 6, textStyle: { color: '#f1f5f9', fontSize: 13, fontWeight: 600 } },
+        wxLine
+          ? { text: wxLine, left: 'center', top: 36, textAlign: 'center', textStyle: { fontSize: 15, color: '#cbd5e1' } }
+          : null
+      ].filter(Boolean),
+      legend: {
+        type: 'scroll',
+        orient: 'horizontal',
+        top: wxLine ? 58 : 30,
+        left: 8,
+        right: 8,
+        textStyle: { color: '#cbd5e1', fontSize: 9 },
+        pageTextStyle: { color: '#64748b' },
+        itemWidth: 14,
+        itemHeight: 8
+      },
+      grid: { left: 48, right: 44, top: wxLine ? 96 : 68, bottom: 52, containLabel: false },
+      tooltip: tooltipAxis,
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: xCat,
+        axisLine: axisLine,
+        axisLabel: { color: '#64748b', fontSize: 9, interval: 23 },
+        axisTick: { show: false }
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: 'kW',
+          min: 0,
+          max: kwMax,
+          splitNumber: 5,
+          axisLabel: { color: '#94a3b8', fontSize: 10 },
+          nameTextStyle: { color: '#94a3b8', fontSize: 10 },
+          splitLine: splitLine
+        },
+        {
+          type: 'value',
+          name: '% SOC',
+          min: 0,
+          max: 100,
+          position: 'right',
+          axisLabel: { color: '#fb923c', formatter: '{value}%' },
+          nameTextStyle: { color: '#fb923c', fontSize: 10 },
+          splitLine: { show: false }
+        }
+      ],
+      dataZoom: dataZoomPair,
+      series: series
+    };
+  }
+
+  if(tab === 'price'){
+    const pricesFull = (simResult.prices96 && simResult.prices96.length >= STEPS) ? simResult.prices96.slice(0, STEPS) : (simResult.prices96 || []).slice();
+    const pr = sliceArr(pricesFull);
+    if(!pr.length){
+      return { ...base, title: { text: '…', left: 'center', top: 'center', textStyle: { color: '#64748b' } } };
+    }
+    const pMin = Math.min.apply(null, pr) * 0.95;
+    const pMax = Math.max.apply(null, pr) * 1.05;
+    return {
+      ...base,
+      title: { text: emsT('€/kWh · 日前固定', '€/kWh · day-ahead'), left: 8, top: 6, textStyle: { color: '#f87171', fontSize: 11, fontWeight: 600 } },
+      grid: { left: 48, right: 14, top: 36, bottom: 48, containLabel: false },
+      tooltip: tooltipAxis,
+      xAxis: { type: 'category', boundaryGap: false, data: xCat, axisLine: axisLine, axisLabel: { color: '#64748b', fontSize: 9, interval: 23 } },
+      yAxis: { type: 'value', min: pMin, max: pMax, splitLine: splitLine, axisLabel: { color: '#94a3b8', fontSize: 9, formatter: function(v){ return v.toFixed(3); } } },
+      dataZoom: dataZoomPair,
+      series: [{
+        name: emsT('电价', 'Price'),
+        type: 'line',
+        smooth: 0.2,
+        symbol: 'none',
+        lineStyle: { width: 2.2, color: '#f87171' },
+        areaStyle: {
+          color: typeof echarts !== 'undefined' && echarts.graphic
+            ? new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(248,113,113,0.35)' },
+                { offset: 1, color: 'rgba(248,113,113,0.02)' }
+              ])
+            : 'rgba(248,113,113,0.12)'
+        },
+        data: pr
+      }]
+    };
+  }
+
+  if(tab === 'soc'){
+    const pred = sliceArr(simResult.predSoc);
+    const act = sliceArr(simResult.actSoc);
+    return {
+      ...base,
+      title: { text: emsT('预测 / 实际 SOC · %', 'Pred / act SOC · %'), left: 8, top: 6, textStyle: { color: '#7dd3fc', fontSize: 11 } },
+      legend: { top: 26, left: 8, textStyle: { fontSize: 9, color: '#cbd5e1' }, data: [emsT('预测 SOC', 'Pred SOC'), emsT('实际 SOC', 'Act SOC')] },
+      grid: { left: 44, right: 14, top: 52, bottom: 48 },
+      tooltip: tooltipAxis,
+      xAxis: { type: 'category', boundaryGap: false, data: xCat, axisLine: axisLine, axisLabel: { interval: 23, fontSize: 9, color: '#64748b' } },
+      yAxis: { type: 'value', min: 0, max: 100, splitLine: splitLine, axisLabel: { formatter: '{value}%', color: '#94a3b8' } },
+      dataZoom: dataZoomPair,
+      series: [
+        { name: emsT('预测 SOC', 'Pred SOC'), type: 'line', smooth: 0.15, showSymbol: false, lineStyle: { width: 2, type: [5, 3], color: '#38bdf8' }, data: pred },
+        { name: emsT('实际 SOC', 'Act SOC'), type: 'line', smooth: 0.15, showSymbol: false, lineStyle: { width: 2.2, color: '#a78bfa' }, data: act }
+      ]
+    };
+  }
+
+  if(tab === 'load'){
+    const ld = sliceArr(simResult.load);
+    const mx = Math.max.apply(null, ld.concat([0.01]));
+    return {
+      ...base,
+      title: { text: emsT('用电 · kWh/15min', 'Load · kWh/15m'), left: 8, top: 6, textStyle: { color: '#6ee7b7', fontSize: 11 } },
+      grid: { left: 44, right: 14, top: 36, bottom: 48 },
+      tooltip: tooltipAxis,
+      xAxis: { type: 'category', data: xCat, axisLine: axisLine, axisLabel: { interval: 23, fontSize: 9, color: '#64748b' } },
+      yAxis: { type: 'value', min: 0, max: mx * 1.05, splitLine: splitLine, axisLabel: { color: '#94a3b8', fontSize: 9 } },
+      dataZoom: dataZoomPair,
+      series: [{
+        name: emsT('用电', 'Load'),
+        type: 'bar',
+        barMaxWidth: 10,
+        itemStyle: {
+          color: typeof echarts !== 'undefined' && echarts.graphic
+            ? new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(52,211,153,0.85)' },
+                { offset: 1, color: 'rgba(16,185,129,0.35)' }
+              ])
+            : 'rgba(52,211,153,0.7)'
+        },
+        data: ld
+      }]
+    };
+  }
+
+  if(tab === 'ai'){
+    const ad = sliceArr(simResult.aiDec);
+    const nodes = simResult.aiNodes || [];
+    const data = ad.map(function(v, i){
+      const ty = (nodes[i] && nodes[i].type) || 'balance';
+      const col = (DECISION_META[ty] || DECISION_META.balance).color;
+      return { value: v, itemStyle: { color: col, borderColor: col } };
+    });
+    return {
+      ...base,
+      title: { text: emsT('AI 决策 · −1 / 0 / +1（充·平衡·放）', 'AI dispatch · −1/0/+1'), left: 8, top: 6, textStyle: { color: '#7dd3fc', fontSize: 10 } },
+      legend: { type: 'scroll', top: 28, left: 8, right: 8, textStyle: { fontSize: 8, color: '#94a3b8' }, data: RECAP_TIMELINE_TYPES.map(function(k){ return DECISION_META[k].label; }) },
+      grid: { left: 42, right: 14, top: 72, bottom: 48 },
+      tooltip: {
+        ...tooltipAxis,
+        formatter: function(params){
+          const p = params[0];
+          const i = p.dataIndex;
+          const node = nodes[i] || {};
+          const ty = node.type || 'balance';
+          const meta = DECISION_META[ty] || DECISION_META.balance;
+          let html = '<div style="font-weight:700;color:#22d3ee;">' + formatStepLabel(i) + '</div>';
+          html += '<div style="margin:4px 0;color:#e2e8f0;">' + meta.label + ' · <b>' + (p.value != null ? p.value : '—') + '</b></div>';
+          if(node.reason) html += '<div style="color:#94a3b8;font-size:10px;max-width:240px;line-height:1.35;">' + escapeHtml(node.reason) + '</div>';
+          return html;
+        }
+      },
+      xAxis: { type: 'category', data: xCat, axisLine: axisLine, axisLabel: { interval: 23, fontSize: 9, color: '#64748b' } },
+      yAxis: { type: 'value', min: -1, max: 1, splitNumber: 2, splitLine: splitLine, axisLabel: { color: '#94a3b8', formatter: function(v){ return v === 1 ? '+1' : (v === -1 ? '−1' : '0'); } } },
+      dataZoom: dataZoomPair,
+      series: [{
+        name: emsT('决策', 'Decision'),
+        type: 'line',
+        step: 'end',
+        symbol: 'circle',
+        symbolSize: 7,
+        lineStyle: { width: 2, color: 'rgba(56,189,248,0.5)' },
+        data: data
+      }]
+    };
+  }
+
+  if(tab === 'all'){
+    const pricesFull = (simResult.prices96 && simResult.prices96.length >= STEPS) ? simResult.prices96.slice(0, STEPS) : sliceArr(simResult.prices96);
+    const pr = sliceArr(pricesFull);
+    const pMin = pr.length ? Math.min.apply(null, pr) * 0.95 : 0;
+    const pMax = pr.length ? Math.max.apply(null, pr) * 1.05 : 1;
+    const pred = sliceArr(simResult.predSoc);
+    const act = sliceArr(simResult.actSoc);
+    const ld = sliceArr(simResult.load);
+    const mxLd = Math.max.apply(null, ld.concat([0.01]));
+    return {
+      ...base,
+      title: { text: emsT('综合 · 电价 / SOC / 用电', 'All · price / SOC / load'), left: 8, top: 4, textStyle: { color: '#cbd5e1', fontSize: 11 } },
+      axisPointer: { link: [{ xAxisIndex: [0, 1, 2] }] },
+      grid: [
+        { left: 56, right: 12, top: '12%', height: '22%' },
+        { left: 56, right: 12, top: '40%', height: '22%' },
+        { left: 56, right: 12, top: '68%', height: '18%' }
+      ],
+      xAxis: [
+        { type: 'category', data: xCat, gridIndex: 0, axisLabel: { interval: 23, fontSize: 8, color: '#64748b' }, axisLine: axisLine },
+        { type: 'category', data: xCat, gridIndex: 1, axisLabel: { show: false }, axisLine: axisLine },
+        { type: 'category', data: xCat, gridIndex: 2, axisLabel: { interval: 23, fontSize: 8, color: '#64748b' }, axisLine: axisLine }
+      ],
+      yAxis: [
+        { type: 'value', gridIndex: 0, min: pMin, max: pMax, splitLine: splitLine, axisLabel: { fontSize: 8, color: '#f87171', formatter: function(v){ return v.toFixed(2); } }, name: '€', nameTextStyle: { fontSize: 9, color: '#f87171' } },
+        { type: 'value', gridIndex: 1, min: 0, max: 100, splitLine: splitLine, axisLabel: { fontSize: 8, formatter: '{value}%', color: '#94a3b8' }, name: '%', nameTextStyle: { fontSize: 9, color: '#94a3b8' } },
+        { type: 'value', gridIndex: 2, min: 0, max: mxLd * 1.05, splitLine: splitLine, axisLabel: { fontSize: 8, color: '#6ee7b7' }, name: 'kWh', nameTextStyle: { fontSize: 9, color: '#6ee7b7' } }
+      ],
+      dataZoom: dataZoomPair,
+      tooltip: {
+        trigger: 'axis',
+        appendToBody: true,
+        backgroundColor: 'rgba(8,12,20,0.94)',
+        borderColor: 'rgba(99,102,241,0.4)',
+        borderWidth: 1,
+        axisPointer: { type: 'shadow' },
+        formatter: function(params){
+          if(!params || !params.length) return '';
+          const i = params[0].dataIndex;
+          let html = '<div style="font-weight:700;color:#a5b4fc;margin-bottom:6px;">' + formatStepLabel(i) + '</div>';
+          params.forEach(function(p){
+            const v = p.value;
+            let vs = '—';
+            if(v != null && v !== '' && isFinite(v)){ const _sn = String(p.seriesName); vs = Number(v).toFixed(/SOC/i.test(_sn) ? 1 : (/电价|Price/i.test(_sn) ? 3 : 2)); }
+            html += '<div style="margin:2px 0;"><span style="color:#94a3b8;">' + p.marker + p.seriesName + '</span> <b style="color:#f8fafc;">' + vs + '</b></div>';
+          });
+          return html;
+        }
+      },
+      series: [
+        { name: emsT('电价', 'Price'), type: 'line', xAxisIndex: 0, yAxisIndex: 0, showSymbol: false, lineStyle: { width: 1.4, color: '#f87171' }, data: pr },
+        { name: emsT('预测 SOC', 'Pred SOC'), type: 'line', xAxisIndex: 1, yAxisIndex: 1, showSymbol: false, lineStyle: { width: 1.2, color: '#38bdf8', type: [4, 3] }, data: pred },
+        { name: emsT('实际 SOC', 'Act SOC'), type: 'line', xAxisIndex: 1, yAxisIndex: 1, showSymbol: false, lineStyle: { width: 1.3, color: '#c084fc' }, data: act },
+        { name: emsT('用电', 'Load'), type: 'bar', xAxisIndex: 2, yAxisIndex: 2, barMaxWidth: 8, itemStyle: { color: 'rgba(52,211,153,0.55)' }, data: ld }
+      ]
+    };
+  }
+
+  return { ...base, title: { text: '—', left: 'center', top: 'center', textStyle: { color: '#64748b' } } };
+}
+
+function drawChart(){
+  const host = document.getElementById('chart-echarts-host');
+  if(!host){
+    return;
+  }
+  if(typeof echarts === 'undefined'){
+    host.innerHTML = '<p style="color:#64748b;padding:24px;text-align:center;font-size:12px;">' + emsT('图表库加载失败，请检查网络。', 'Chart library failed to load.') + '</p>';
+    return;
+  }
+  const wrap = host.parentElement;
+  const h = Math.max(220, (wrap && wrap.clientHeight) ? (wrap.clientHeight - 42) : 260);
+  host.style.width = '100%';
+  host.style.height = h + 'px';
+  if(!simResult){
+    disposeEmsMainChart();
+    emsEchartsMain = echarts.init(host, null, { renderer: 'canvas' });
+    emsEchartsMain.setOption({
+      ...emsChartBaseTheme(),
+      title: {
+        text: emsT('运行仿真后显示曲线', 'Run simulation for charts'),
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#64748b', fontSize: 14, fontWeight: 500 }
+      }
+    });
+    return;
+  }
+  if(chartTab === 'predsoc' || chartTab === 'actsoc') chartTab = 'soc';
+  const reveal = getChartRevealSteps();
+  const simRef = simResult;
+  if(!emsEchartsMain){
+    emsEchartsMain = echarts.init(host, null, { renderer: 'canvas' });
+  }
+  if(emsEchartsMain && simRef &&
+      reveal === emsChartDrawStamp.reveal &&
+      chartTab === emsChartDrawStamp.tab &&
+      simRef === emsChartDrawStamp.sim){
+    if(Math.abs(h - emsChartDrawStamp.h) >= 2){
+      emsEchartsMain.resize();
+      emsChartDrawStamp.h = h;
+    }
+    return;
+  }
+  if(emsEchartsMain && Math.abs(h - emsChartDrawStamp.h) >= 2){
+    emsEchartsMain.resize();
+  }
+  emsEchartsMain.setOption(buildMainEchartsOption(), { notMerge: true, lazyUpdate: false });
+  emsChartDrawStamp = { reveal: reveal, tab: chartTab, h: h, sim: simRef };
+}
